@@ -1,0 +1,19 @@
+[project]
+name = "avaliacoes-entrega-ptbr"
+version = "0.1.0"
+description = "Classificador do motivo de reclamação em avaliações de e-commerce em português: baseline clássico, zero-shot e LoRA em modelo pequeno"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+# local: só preparação dos dados e baseline clássico, que rodam em segundos.
+# a parte com GPU (rotulagem pelo 7B, zero-shot e LoRA) está em kaggle/avaliacoes-entrega-ptbr.ipynb
+dependencies = [
+    "pandas>=2.2",
+    "scikit-learn>=1.5",
+    "matplotlib>=3.9",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.3", "ruff>=0.7"]
+
+[tool.ruff]
+line-length = 100
