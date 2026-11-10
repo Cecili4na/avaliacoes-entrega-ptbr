@@ -32,6 +32,8 @@ import sys
 
 if importlib.util.find_spec("vllm") is None:
     subprocess.run([sys.executable, "-m", "pip", "install", "-q", "vllm", "peft>=0.13"], check=True)
+    # o torchao que vem no Kaggle é antigo demais para o peft e quebra o get_peft_model; não usamos
+    subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "-q", "torchao"], check=True)
     print("Instalado. A sessão vai reiniciar: rode tudo de novo (Run All).")
     os._exit(0)
 
