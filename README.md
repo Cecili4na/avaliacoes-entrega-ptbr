@@ -6,6 +6,10 @@ pedido incompleto, produto errado, defeito, atendimento ou cobrança, elogio, ou
 A pergunta do projeto: **quanto do desempenho de um LLM de 7B dá para manter num modelo 14 vezes
 menor**, treinado com os rótulos do grande? E vale a pena, comparado a um modelo clássico?
 
+- **Demo:** [huggingface.co/spaces/cecili4na/motivos-avaliacoes](https://huggingface.co/spaces/cecili4na/motivos-avaliacoes)
+- **Modelo:** [cecili4na/qwen2.5-0.5b-motivos-avaliacoes](https://huggingface.co/cecili4na/qwen2.5-0.5b-motivos-avaliacoes)
+- **Dados:** [cecili4na/avaliacoes-entrega-ptbr](https://huggingface.co/datasets/cecili4na/avaliacoes-entrega-ptbr)
+
 ## Abordagens comparadas
 
 | | Modelo | Treino |
