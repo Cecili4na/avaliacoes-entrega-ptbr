@@ -398,17 +398,23 @@ A métrica principal é o F1 macro das 7 classes de reclamação: acertar *qual*
 
 ```python
 import torch
-from peft import AutoPeftModelForSequenceClassification
-from transformers import AutoTokenizer
+from peft import PeftModel
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
+ROTULOS = {NOMES}
 repo = "{REPO_MODELO}"
 tokenizer = AutoTokenizer.from_pretrained(repo)
 tokenizer.padding_side = "left"  # o classificador lê o último token
-modelo = AutoPeftModelForSequenceClassification.from_pretrained(repo).eval()
+base = AutoModelForSequenceClassification.from_pretrained("Qwen/Qwen2.5-0.5B", num_labels=len(ROTULOS))
+base.config.pad_token_id = tokenizer.pad_token_id
+modelo = PeftModel.from_pretrained(base, repo).eval()
+
 enc = tokenizer(["Comprei dois e só chegou um"], return_tensors="pt", padding=True)
 with torch.no_grad():
-    print(modelo.config.id2label[modelo(**enc).logits.argmax(-1).item()])
+    print(ROTULOS[modelo(**enc).logits.argmax(-1).item()])
 ```
+
+Demo: huggingface.co/spaces/{usuario}/motivos-avaliacoes
 
 ## Dados e licença
 
