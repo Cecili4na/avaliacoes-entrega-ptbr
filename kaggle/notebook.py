@@ -19,10 +19,21 @@
 # %% [markdown]
 # ## 0. Ambiente
 #
-# Rode com **GPU T4 x2** (Settings → Accelerator). A instalação do vLLM leva uns 3 minutos.
+# Rode com **GPU T4 x2** (Settings → Accelerator). A instalação do vLLM leva uns 3 minutos e
+# reinicia a sessão uma vez; depois disso, rode tudo de novo.
 
 # %%
-# !pip install -q "vllm>=0.6" "peft>=0.13"
+# Instala o vLLM e reinicia a sessão uma vez: o pip troca a versão do torch, e o torch antigo
+# não pode continuar carregado na memória. Depois do reinício, "Run All" de novo pula esta parte.
+import importlib.util
+import os
+import subprocess
+import sys
+
+if importlib.util.find_spec("vllm") is None:
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", "vllm", "peft>=0.13"], check=True)
+    print("Instalado. A sessão vai reiniciar: rode tudo de novo (Run All).")
+    os._exit(0)
 
 # %%
 import gc
@@ -332,3 +343,111 @@ teste["lora"] = previsto
 erros = teste[teste["lora"] != teste["rotulo"]][["texto", "rotulo", "lora"]]
 print(len(erros), "erros em", len(teste))
 erros.head(25)
+
+# %% [markdown]
+# ## 9. Publicação no Hugging Face
+#
+# Publica o adaptador LoRA e os dados (teste rotulado à mão e treino rotulado pelo professor) como
+# repositórios **privados** no Hugging Face. Revise lá e torne públicos quando estiverem bons.
+#
+# Antes de rodar: crie um token com permissão de escrita em huggingface.co/settings/tokens e
+# guarde-o no Kaggle em **Add-ons → Secrets** com o nome `HF_TOKEN`.
+
+# %%
+from huggingface_hub import HfApi
+from kaggle_secrets import UserSecretsClient
+
+api = HfApi(token=UserSecretsClient().get_secret("HF_TOKEN"))
+usuario = api.whoami()["name"]
+REPO_MODELO = f"{usuario}/qwen2.5-0.5b-motivos-avaliacoes"
+REPO_DADOS = f"{usuario}/avaliacoes-entrega-ptbr"
+COLUNAS = ["acuracia", "f1_macro", "f1_macro_reclamacoes", "ms_por_avaliacao"]
+tabela_md = "| modelo | " + " | ".join(COLUNAS) + " |\n|---" * (len(COLUNAS) + 1) + "|\n" + "\n".join(
+    f"| {nome} | " + " | ".join(f"{linha[c]:.3f}" if c != "ms_por_avaliacao" else f"{linha[c]:.1f}" for c in COLUNAS) + " |"
+    for nome, linha in tabela.iterrows())
+
+cartao_modelo = f"""---
+base_model: Qwen/Qwen2.5-0.5B
+library_name: peft
+language: [pt]
+license: cc-by-nc-sa-4.0
+pipeline_tag: text-classification
+datasets: [{REPO_DADOS}]
+tags: [lora, distillation, portuguese, e-commerce, reviews]
+---
+
+# Qwen2.5-0.5B + LoRA: motivo de reclamação em avaliações de compras
+
+Classifica avaliações de compras online em português em 8 motivos: {", ".join(NOMES)}.
+
+Treinado por **destilação**: o Qwen2.5-7B-Instruct rotulou {len(treino)} avaliações e este modelo,
+14 vezes menor, aprendeu com esses rótulos. Avaliado em 500 avaliações rotuladas à mão.
+
+## Resultados no teste (500 avaliações, rótulos manuais)
+
+A métrica principal é o F1 macro das 7 classes de reclamação: acertar *qual* é o problema.
+
+{tabela_md}
+
+## Uso
+
+```python
+import torch
+from peft import AutoPeftModelForSequenceClassification
+from transformers import AutoTokenizer
+
+repo = "{REPO_MODELO}"
+tokenizer = AutoTokenizer.from_pretrained(repo)
+tokenizer.padding_side = "left"  # o classificador lê o último token
+modelo = AutoPeftModelForSequenceClassification.from_pretrained(repo).eval()
+enc = tokenizer(["Comprei dois e só chegou um"], return_tensors="pt", padding=True)
+with torch.no_grad():
+    print(modelo.config.id2label[modelo(**enc).logits.argmax(-1).item()])
+```
+
+## Dados e licença
+
+Avaliações públicas da Olist (CC BY-NC-SA 4.0); por isso o adaptador segue a mesma licença, sem
+uso comercial. Código, notebook e decisões: github.com/Cecili4na/avaliacoes-entrega-ptbr
+"""
+
+cartao_dados = f"""---
+language: [pt]
+license: cc-by-nc-sa-4.0
+task_categories: [text-classification]
+pretty_name: Motivos de reclamação em avaliações de compras (pt-BR)
+configs:
+- config_name: default
+  data_files:
+  - split: train
+    path: treino.csv
+  - split: test
+    path: teste.csv
+---
+
+# Motivos de reclamação em avaliações de compras (pt-BR)
+
+Avaliações da Olist com o motivo principal: {", ".join(NOMES)}.
+
+- **test**: 500 avaliações rotuladas à mão, estratificadas pela nota (quase 60% são elogios).
+- **train**: {len(treino)} avaliações rotuladas pelo Qwen2.5-7B-Instruct (coluna `rotulo_professor`),
+  dois terços com nota de 1 a 3. Rótulos de modelo, com ruído: veja a concordância do professor
+  com o teste no cartão do modelo {REPO_MODELO}.
+
+As colunas `entregue` e `chegou_atrasado` vêm dos dados do pedido e servem de conferência externa.
+
+Fonte: Brazilian E-Commerce Public Dataset by Olist, CC BY-NC-SA 4.0.
+Código: github.com/Cecili4na/avaliacoes-entrega-ptbr
+"""
+
+api.create_repo(REPO_MODELO, private=True, exist_ok=True)
+api.upload_folder(repo_id=REPO_MODELO, folder_path=SAIDA / "qwen0.5b-lora-motivos")
+for arquivo in ["comparacao.csv", "historico_lora.json", "confusao_qwen0.5b_lora.png"]:
+    api.upload_file(repo_id=REPO_MODELO, path_or_fileobj=SAIDA / arquivo, path_in_repo=arquivo)
+api.upload_file(repo_id=REPO_MODELO, path_or_fileobj=cartao_modelo.encode(), path_in_repo="README.md")
+
+api.create_repo(REPO_DADOS, repo_type="dataset", private=True, exist_ok=True)
+api.upload_file(repo_id=REPO_DADOS, repo_type="dataset", path_or_fileobj=ENTRADA / "teste.csv", path_in_repo="teste.csv")
+api.upload_file(repo_id=REPO_DADOS, repo_type="dataset", path_or_fileobj=SAIDA / "treino_professor.csv", path_in_repo="treino.csv")
+api.upload_file(repo_id=REPO_DADOS, repo_type="dataset", path_or_fileobj=cartao_dados.encode(), path_in_repo="README.md")
+print(f"https://huggingface.co/{REPO_MODELO}\nhttps://huggingface.co/datasets/{REPO_DADOS}")
