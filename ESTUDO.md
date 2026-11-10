@@ -56,7 +56,7 @@ vLLM (structured outputs); o capítulo de quantização do curso de LLM da Huggi
   > aprende com os erros do professor também.
 - O que é um modelo "4-bit"?
   > Os pesos são guardados com 4 bits em vez de 16. O modelo de 7B cai de ~15 GB para ~4 GB e
-  > cabe na memória do Mac, com perda pequena de qualidade.
+  > cabe numa GPU T4 de 16 GB com folga, com perda pequena de qualidade.
 - Por que temperatura 0?
   > Para a resposta ser determinística: o mesmo texto sempre recebe o mesmo rótulo.
 - O que é "saída restrita" (structured outputs)?
@@ -106,11 +106,20 @@ documentação do PEFT na Hugging Face; o vídeo "LoRA explained" da IBM Technol
 
 **Perguntas:**
 - Qual modelo você colocaria em produção, e por quê?
-  > Responda com a tabela: qualidade (F1 macro de reclamações), latência e custo. Não existe
-  > resposta sem dizer o que o negócio precisa.
+  > Depende do que o negócio precisa. O aluno com LoRA tem F1 de 0,599 a 4 ms; o TF-IDF, 0,566 a
+  > 0,26 ms e sem GPU. Se um encaminhamento errado custa caro (um "não recebido" que vai para o
+  > time errado), os 3 pontos valem a GPU. Se o volume é enorme e o erro é barato, o TF-IDF.
+  > O 7B (0,700) só compensa se a qualidade for crítica e o volume, baixo.
+- Por que o 0,5B sem treino acertou só 16%?
+  > Modelos pequenos seguem mal instruções longas. Com 8 rótulos descritos no prompt, ele quase
+  > nunca escolhe "elogio". O ajuste fino troca o prompt por exemplos, e aí o mesmo modelo chega
+  > a 81% de acurácia.
+- Como você sabe que o modelo aprendeu algo real, e não só a imitar o professor?
+  > Pela conferência externa: avaliações que ele chama de "atraso" têm 36% de pedidos realmente
+  > atrasados, contra 3% das que ele chama de "elogio". Ele nunca viu as datas de entrega.
 - Onde o modelo mais erra?
-  > Veja a matriz de confusão. Espere confusão entre "atraso" e "nao_recebido": a fronteira
-  > depende de a pessoa dizer ou não que o pedido já chegou.
+  > "nao_recebido" virando "atraso" ou "atendimento_cobranca". A fronteira depende de a pessoa
+  > dizer que o pedido ainda não chegou, e muitas reclamações misturam isso com falta de resposta.
 - O que você faria com mais tempo?
   > Revisar os rótulos do professor nas classes onde ele mais erra, treinar mais exemplos
   > dessas classes e testar um modelo maior (1,5B) para ver se a curva compensa.
