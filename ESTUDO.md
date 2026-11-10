@@ -106,10 +106,10 @@ documentação do PEFT na Hugging Face; o vídeo "LoRA explained" da IBM Technol
 
 **Perguntas:**
 - Qual modelo você colocaria em produção, e por quê?
-  > Depende do que o negócio precisa. O aluno com LoRA tem F1 de 0,599 a 4 ms; o TF-IDF, 0,566 a
+  > Depende do que o negócio precisa. O aluno com LoRA tem F1 de 0,635 a 4,6 ms; o TF-IDF, 0,571 a
   > 0,26 ms e sem GPU. Se um encaminhamento errado custa caro (um "não recebido" que vai para o
-  > time errado), os 3 pontos valem a GPU. Se o volume é enorme e o erro é barato, o TF-IDF.
-  > O 7B (0,700) só compensa se a qualidade for crítica e o volume, baixo.
+  > time errado), os 6 pontos valem a GPU. Se o volume é enorme e o erro é barato, o TF-IDF.
+  > O 7B (0,698) só compensa se a qualidade for crítica e o volume, baixo.
 - Por que o 0,5B sem treino acertou só 16%?
   > Modelos pequenos seguem mal instruções longas. Com 8 rótulos descritos no prompt, ele quase
   > nunca escolhe "elogio". O ajuste fino troca o prompt por exemplos, e aí o mesmo modelo chega
