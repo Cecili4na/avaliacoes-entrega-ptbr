@@ -359,6 +359,9 @@ erros.head(25)
 from huggingface_hub import HfApi
 from kaggle_secrets import UserSecretsClient
 
+# lê tudo do disco: adicionar um segredo no Kaggle reinicia a sessão e apaga as variáveis
+tabela = pd.read_csv(SAIDA / "comparacao.csv", index_col="modelo")
+treino = pd.read_csv(SAIDA / "treino_professor.csv")
 api = HfApi(token=UserSecretsClient().get_secret("HF_TOKEN"))
 usuario = api.whoami()["name"]
 REPO_MODELO = f"{usuario}/qwen2.5-0.5b-motivos-avaliacoes"
