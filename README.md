@@ -1,5 +1,7 @@
 # avaliacoes-entrega-ptbr
 
+[![testes](https://github.com/Cecili4na/avaliacoes-entrega-ptbr/actions/workflows/testes.yml/badge.svg)](https://github.com/Cecili4na/avaliacoes-entrega-ptbr/actions/workflows/testes.yml)
+
 Classifica o **motivo** de avaliações de compras online em português: pedido não recebido, atraso,
 pedido incompleto, produto errado, defeito, atendimento ou cobrança, elogio, outro.
 
@@ -103,4 +105,11 @@ uv run python src/preparar.py       # base sem duplicatas e separação do teste
 uv run python src/montar_teste.py   # junta os rótulos manuais
 ```
 
+Testes: `uv run pytest`. Conferem o teste rotulado à mão (500 avaliações, rótulos válidos, as
+proporções citadas acima e nenhum texto repetido entre teste e treino) e o cálculo das métricas.
+
 O guia `ESTUDO.md` explica cada decisão e as perguntas que ela responde.
+
+## Licença
+
+Código sob a licença MIT. Os dados derivam da base pública da Olist e seguem a licença dela, CC BY-NC-SA 4.0.

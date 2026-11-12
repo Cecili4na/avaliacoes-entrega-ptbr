@@ -6,15 +6,15 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-from sklearn.metrics import (  # noqa: E402
+import matplotlib.pyplot as plt
+from sklearn.metrics import (
     ConfusionMatrixDisplay,
     accuracy_score,
     classification_report,
     f1_score,
 )
 
-from rotulos import NOMES  # noqa: E402
+from rotulos import NOMES
 
 RAIZ = Path(__file__).resolve().parents[1]
 RESULTADOS = RAIZ / "resultados"
